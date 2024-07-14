@@ -15,7 +15,7 @@ class Movie():
         self.session = requests.Session()
         # 请求头
         self.headers = {
-                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+                    'Accept': 'application/json, text/plain, */*',
                     'Referer': 'https://www.6bt0.com/',
                     'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36'
                 }
@@ -58,8 +58,7 @@ class Movie():
         mv_index = input_number()
 
         if mv_index == -1:
-            self.search_movie()
-            return
+            return self.search_movie()
 
         if -1< mv_index < len(movies):
             self.get_magnets(mv_index,movies)
@@ -68,22 +67,40 @@ class Movie():
             time.sleep(1)
             self.get_movie(movies)
 
-    # 搜索电影
     def search_movie(self):
         clear_screen()
         print("===请输入您想搜索的电影名称===")
         keyword = input()
         print(f"正在搜索电影:{keyword}...")
-        url = f"{self.domain}/search.php?sb={keyword}"
+        url = f"{self.domain}/prod/core/system/getVideoList?sb={keyword}&page=1"
+        print(url)
         response = self.session.get(url,headers=self.headers)
-        soup = BeautifulSoup(response.text, "html.parser")
-        movie_list = soup.select(".masonry_item")
-        # 如果搜索结果不为空
-        if movie_list:
-            self.filter_movie_info(movie_list)
-        else:
-            print("没有检索到相关电影")
-            self.search_movie()
+        data = response.json()
+        movies = [{
+            "title": movie['title'],
+            "movie_path": f"{self.domain}/mv/{movie['id']}.html"
+        }
+        for movie in data['data']]
+        self.get_movie(movies)
+
+
+    # 搜索电影
+    # def search_movie(self):
+    #     clear_screen()
+    #     print("===请输入您想搜索的电影名称===")
+    #     keyword = input()
+    #     print(f"正在搜索电影:{keyword}...")
+    #     url = f"{self.domain}/search.php?sb={keyword}"
+    #     response = self.session.get(url,headers=self.headers)
+    #     soup = BeautifulSoup(response.text, "html.parser")
+    #     print(soup)
+    #     # movie_list = soup.select(".masonry_item")
+    #     # # 如果搜索结果不为空
+    #     # if movie_list:
+    #     #     self.filter_movie_info(movie_list)
+    #     # else:
+    #     #     print("没有检索到相关电影")
+    #     #     self.search_movie()
 
     # 爬取电影某个清晰度的所有磁力链接
     def magnet_cralwer(self,containers):
